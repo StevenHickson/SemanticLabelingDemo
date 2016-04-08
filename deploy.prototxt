@@ -12,8 +12,9 @@ layer {
   top: "segmentations"
   seg_param {
     method: 0
-    k: 200
+    k: 150
     min_size: 100
+    bbox_extension: 7
   }
 }
 layer {

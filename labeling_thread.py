@@ -15,7 +15,7 @@ caffe.set_mode_gpu()
 caffe.set_device(0)
 
 # load net
-net = caffe.Net('deploy.prototxt', 'final.caffemodel', caffe.TEST)
+net = caffe.Net('deploy.prototxt', 'final_downstairs.caffemodel', caffe.TEST)
 
 
 capture=None
@@ -61,6 +61,27 @@ dataset_labels = np.array(['background',
                     'trashcan',
                     'walls',
                     'whiteboard'])
+
+class ColorMap:
+    startcolor = ()
+    endcolor = ()
+    startmap = 0
+    endmap = 0
+    colordistance = 0
+    valuerange = 0
+    ratios = []    
+
+    def __init__(self, startcolor, endcolor, startmap, endmap):
+        self.startcolor = np.array(startcolor)
+        self.endcolor = np.array(endcolor)
+        self.startmap = float(startmap)
+        self.endmap = float(endmap)
+        self.valuerange = float(endmap - startmap)
+        self.ratios = (self.endcolor - self.startcolor) / self.valuerange
+
+    def __getitem__(self, value):
+        color = tuple(self.startcolor + (self.ratios * (value - self.startmap)))
+        return (int(color[0]), int(color[1]), int(color[2]))
 
 def create_legend(colors, pairs):
   h = 50
@@ -114,19 +135,34 @@ def classify_image(img):
   #cv2.imwrite('output.png',result)
   #result = cv2.applyColorMap(result, cv2.COLORMAP_JET);
   padding = 255 * np.ones((227,373,3))
+  #mapping2 = ColorMap((0,0,0),(255,255,255),0,out.shape[0])
+  #segResult = mapping2[seg];
+  #segResult = np.zeros((227,227,3))
+  #it = np.nditer(segResult, op_flags=['writeonly'])
+  #for x in np.nditer(seg):
+  #  tmp = mapping2[x]
+  #  it[0] = tmp[0]
+  #  it.iternext()
+  #  it[0] = tmp[1]
+  #  it.iternext()
+  #  it[0] = tmp[2]
+  #  it.iternext()
+  #print segResult.shape
+  #padding = 255 * np.ones((227,519,3))
   result = colormap(result)
+  #result = np.concatenate((img,segResult,result,padding),axis=1)
   result = np.concatenate((padding,img,result,padding),axis=1)
   result = np.concatenate((result,legend),axis=0)
   return result
 
 def img_thread():
-    global result
+    #global result
     while True:
         try:
-            rc,img = capture.read()
-            if not rc:
-                continue
-            result = classify_image(img)
+            rc = capture.grab()
+            #if not rc:
+            #    continue
+            #result = classify_image(img)
             time.sleep(0.01)
         except KeyboardInterrupt:
             break
@@ -141,6 +177,10 @@ class CamHandler(BaseHTTPRequestHandler):
             self.end_headers()
             while True:
                 try:
+                    rc,img = capture.read()
+                    if not rc:
+                        continue
+                    result = classify_image(img)
                     r, buf = cv2.imencode(".jpg",result)
                     self.wfile.write("--jpgboundary\r\n")
                     self.send_header('Content-type','image/jpeg')

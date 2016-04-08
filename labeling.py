@@ -162,7 +162,6 @@ def main():
     capture = cv2.VideoCapture(0)
     capture.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, 227); 
     capture.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, 227);
-    capture.set(cv2.cv.CV_CAP_PROP_BUFFERSIZE, 2);
     try:
         server = HTTPServer(('',8080),CamHandler)
         #server.socket = ssl.wrap_socket (server.socket, ca_certs='/home/pi/Authentication/ca.crt', certfile='/home/pi/Authentication/server.crt', keyfile='/home/pi/Authentication/server.nocrypt.key', server_side=False, cert_reqs=ssl.CERT_REQUIRED)
